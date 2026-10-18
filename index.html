@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Portfolio & Notion Blog</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .code-font { font-family: 'Fira Code', monospace; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        .dark ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+        .light ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-zinc-100 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 transition-colors duration-300 min-h-screen flex flex-col justify-between">
+
+    <header class="sticky top-0 z-40 backdrop-blur-md bg-white/85 dark:bg-zinc-950/85 border-b border-zinc-200 dark:border-zinc-800 transition-colors">
+        <div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="resetToHome()">
+                <div class="w-10 h-10 rounded-xl bg-zinc-900 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                    <i class="fa-solid fa-terminal text-lg"></i>
+                </div>
+                <div>
+                    <span class="font-bold text-lg tracking-tight code-font block leading-tight">SECURITY@STUDY<span class="text-emerald-500">_LAB</span></span>
+                    <span class="text-xs text-zinc-500 dark:text-zinc-400">Notion Synced Portfolio</span>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <nav class="hidden md:flex items-center space-x-6 text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                    <button onclick="openAboutModal()" class="hover:text-emerald-500 dark:hover:text-emerald-400 transition bg-transparent border-none cursor-pointer">About</button>
+                    <button onclick="resetToHome()" class="hover:text-emerald-500 dark:hover:text-emerald-400 transition bg-transparent border-none cursor-pointer">Categories</button>
+                </nav>
+                <button id="themeToggle" onclick="toggleTheme()" class="w-10 h-10 rounded-xl bg-zinc-200 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 flex items-center justify-center text-zinc-700 dark:text-emerald-400 hover:border-emerald-500/50 transition shadow-sm" aria-label="테마 전환">
+                    <i id="themeIcon" class="fa-solid fa-moon text-sm"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-5xl mx-auto px-6 py-10 w-full">
+        <section id="about" class="mb-12 p-8 rounded-3xl bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 shadow-sm relative overflow-hidden">
+            <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div>
+                    <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold code-font mb-4">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span>NOTION DB SYNC ACTIVE</span>
+                    </div>
+                    <h1 class="text-3xl md:text-4xl font-bold tracking-tight mb-3">공부 기록 포트폴리오 블로그</h1>
+                    <p class="text-zinc-600 dark:text-zinc-400 text-sm md:text-base leading-relaxed max-w-2xl">
+                        노션(Notion) 데이터베이스와 실시간 연동되는 개인 보안 포트폴리오입니다.
+                    </p>
+                </div>
+                <div class="flex flex-col space-y-2 text-xs code-font bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 min-w-[240px]">
+                    <div class="flex justify-between"><span>SYNC MODE:</span> <span class="text-emerald-500 font-semibold" id="syncStatus">Connecting...</span></div>
+                    <div class="flex justify-between"><span>POSTS:</span> <span class="text-zinc-800 dark:text-zinc-200" id="postCount">-</span></div>
+                    <button onclick="loadPosts(true)" class="mt-2 text-center py-1.5 px-3 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-xl transition font-semibold cursor-pointer">
+                        <i class="fa-solid fa-rotate mr-1"></i>새로고침
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <div id="contentArea"></div>
+    </main>
+
+    <div id="postModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden p-4">
+        <div class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50 dark:bg-zinc-900/40">
+                <div class="flex items-center space-x-2">
+                    <span id="modalCategory" class="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-semibold code-font"></span>
+                    <span id="modalDate" class="text-xs text-zinc-500"></span>
+                </div>
+                <button onclick="closeModal()" class="w-8 h-8 rounded-xl bg-zinc-200 dark:bg-zinc-900 hover:bg-zinc-300 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-400 transition cursor-pointer">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            <div class="p-6 md:p-8 overflow-y-auto space-y-6">
+                <nav id="modalCrumbs" class="hidden flex-wrap items-center gap-1 text-xs text-zinc-500"></nav>
+                <h1 id="modalTitle" class="text-2xl md:text-3xl font-bold tracking-tight"></h1>
+                <div id="modalContent" class="text-zinc-700 dark:text-zinc-300 text-sm md:text-base leading-relaxed space-y-4"></div>
+            </div>
+            <div class="px-6 py-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 flex justify-end">
+                <button onclick="closeModal()" class="px-5 py-2 rounded-xl bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-sm font-medium transition cursor-pointer">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="border-t border-zinc-200 dark:border-zinc-800 py-8 text-center text-xs text-zinc-500 transition-colors">
+        <p>&copy; 2026 Security Portfolio. Notion Integrated. <span class="code-font opacity-60">build v4</span></p>
+    </footer>
+
+    <script>
+        let posts = [];
+        let categories = [];
+        let currentView = 'categories';
+        let selectedCategory = null;
+        let currentSort = 'desc';
+        let loadError = null;
+
+        // 사용자/노션 데이터를 HTML에 넣을 때 반드시 이스케이프
+        function esc(s) {
+            return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
+        async function loadPosts(force) {
+            const status = document.getElementById('syncStatus');
+            status.innerText = 'Syncing...';
+            loadError = null;
+            try {
+                const res = await fetch('/api/posts' + (force ? '?t=' + Date.now() : ''));
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || res.statusText);
+                posts = data.posts;
+                status.innerText = 'Notion Live Synced';
+            } catch (e) {
+                posts = [];
+                loadError = e.message;
+                status.innerText = 'Sync Error';
+            }
+            document.getElementById('postCount').innerText = posts.length;
+            updateCategories();
+            renderApp();
+        }
+
+        function updateCategories() {
+            const catMap = {};
+            posts.forEach(p => {
+                const name = p.category || 'Uncategorized';
+                if (!catMap[name]) catMap[name] = { name, count: 0, icon: getCategoryIcon(name) };
+                catMap[name].count++;
+            });
+            categories = Object.values(catMap);
+        }
+
+        function getCategoryIcon(catName) {
+            if (catName.includes('Vulnerability') || catName.includes('System')) return 'fa-shield-halved';
+            if (catName.includes('CTF')) return 'fa-flag';
+            return 'fa-code';
+        }
+
+        function sortPosts(list) {
+            return [...list].sort((a, b) => {
+                const dA = new Date((a.date || '').replace(/\//g, '-') || 0);
+                const dB = new Date((b.date || '').replace(/\//g, '-') || 0);
+                return currentSort === 'desc' ? dB - dA : dA - dB;
+            });
+        }
+
+        const sortSelectHtml = () => `
+            <div class="flex items-center space-x-2">
+                <span class="text-xs text-zinc-500">정렬:</span>
+                <select onchange="changeSort(this.value)" class="px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-xs font-semibold focus:outline-none focus:border-emerald-500 cursor-pointer">
+                    <option value="desc" ${currentSort === 'desc' ? 'selected' : ''}>최신순</option>
+                    <option value="asc" ${currentSort === 'asc' ? 'selected' : ''}>오래된순</option>
+                </select>
+            </div>`;
+
+        function postCardHtml(post) {
+            return `
+                <div onclick="openModal('${esc(post.id)}')" class="group bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 hover:border-emerald-500/50 transition-all duration-300 flex flex-col justify-between cursor-pointer shadow-sm hover:shadow-md hover:shadow-emerald-500/5">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-semibold code-font">${esc(post.category || 'Uncategorized')}</span>
+                            <span class="text-xs text-zinc-400">${esc(post.date)}</span>
+                        </div>
+                        <h3 class="text-lg font-bold tracking-tight mb-2 group-hover:text-emerald-500 transition">${esc(post.icon)} ${esc(post.title)}</h3>
+                        <p class="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed mb-6">${esc(post.summary)}</p>
+                    </div>
+                    <div class="flex items-center text-xs font-semibold text-emerald-600 dark:text-emerald-400 space-x-1">
+                        <span>Read Article</span>
+                        <i class="fa-solid fa-arrow-right text-[10px] transform group-hover:translate-x-1 transition"></i>
+                    </div>
+                </div>`;
+        }
+
+        function renderApp() {
+            const container = document.getElementById('contentArea');
+            if (!container) return;
+
+            if (loadError) {
+                container.innerHTML = `
+                    <div class="p-6 rounded-3xl border border-rose-500/30 bg-rose-500/5 text-sm">
+                        <p class="font-semibold text-rose-500 mb-2"><i class="fa-solid fa-triangle-exclamation mr-2"></i>노션 데이터를 불러오지 못했습니다.</p>
+                        <p class="text-zinc-600 dark:text-zinc-400 break-words">${esc(loadError)}</p>
+                        <p class="text-xs text-zinc-500 mt-3">Vercel 환경 변수(NOTION_TOKEN, NOTION_DATABASE_ID)와 노션 DB의 연결(Integration 초대)을 확인해주세요.</p>
+                    </div>`;
+                return;
+            }
+
+            if (currentView === 'categories') {
+                let html = `
+                    <div class="mb-6 flex items-center justify-between">
+                        <h2 class="text-xl font-bold tracking-tight flex items-center space-x-2">
+                            <i class="fa-solid fa-folder-tree text-emerald-500"></i><span>Categories</span>
+                        </h2>
+                        <span class="text-xs text-zinc-500">카테고리를 선택해 포스트를 확인하세요</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">`;
+
+                categories.forEach((cat, i) => {
+                    html += `
+                        <div onclick="selectCategory(${i})" class="group bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 hover:border-emerald-500/50 transition-all duration-300 cursor-pointer shadow-sm hover:shadow-md hover:shadow-emerald-500/5 flex flex-col justify-between">
+                            <div>
+                                <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 mb-6 group-hover:scale-110 transition">
+                                    <i class="fa-solid ${cat.icon} text-lg"></i>
+                                </div>
+                                <h3 class="text-lg font-bold tracking-tight mb-2 group-hover:text-emerald-500 transition">${esc(cat.name)}</h3>
+                                <p class="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed mb-6">노션 연동 시큐리티 아카이브 데이터베이스.</p>
+                            </div>
+                            <div class="flex items-center justify-between pt-4 border-t border-zinc-100 dark:border-zinc-800/60 text-xs font-semibold">
+                                <span class="text-zinc-500 dark:text-zinc-400">${cat.count} Articles</span>
+                                <span class="text-emerald-600 dark:text-emerald-400 flex items-center space-x-1">
+                                    <span>Explore</span>
+                                    <i class="fa-solid fa-arrow-right text-[10px] transform group-hover:translate-x-1 transition"></i>
+                                </span>
+                            </div>
+                        </div>`;
+                });
+                html += `</div>`;
+
+                html += `
+                    <div class="mb-6 flex items-center justify-between flex-wrap gap-4 pt-6 border-t border-zinc-200 dark:border-zinc-800">
+                        <h2 class="text-xl font-bold tracking-tight flex items-center space-x-2">
+                            <i class="fa-solid fa-list text-emerald-500"></i><span>All Posts (전체 글)</span>
+                        </h2>
+                        ${sortSelectHtml()}
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">`;
+
+                const all = sortPosts(posts);
+                html += all.length
+                    ? all.map(postCardHtml).join('')
+                    : `<div class="col-span-2 py-12 text-center text-zinc-500 text-sm">등록된 포스트가 없습니다.</div>`;
+                html += `</div>`;
+                container.innerHTML = html;
+
+            } else {
+                const filtered = sortPosts(posts.filter(p => (p.category || 'Uncategorized') === selectedCategory));
+                container.innerHTML = `
+                    <div class="mb-8 flex items-center justify-between flex-wrap gap-4">
+                        <button onclick="resetToHome()" class="inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-zinc-200 dark:bg-zinc-900 hover:bg-zinc-300 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-semibold transition border border-zinc-300 dark:border-zinc-800 cursor-pointer">
+                            <i class="fa-solid fa-arrow-left"></i><span>전체 카테고리로 돌아가기</span>
+                        </button>
+                        <div class="flex items-center space-x-4">
+                            ${sortSelectHtml()}
+                            <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-semibold code-font">
+                                <span>CATEGORY: ${esc(selectedCategory)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        ${filtered.length ? filtered.map(postCardHtml).join('') : '<div class="col-span-2 py-16 text-center text-zinc-500 text-sm">등록된 포스트가 없습니다.</div>'}
+                    </div>`;
+            }
+        }
+
+        function changeSort(v) { currentSort = v; renderApp(); }
+
+        function selectCategory(i) {
+            currentView = 'posts';
+            selectedCategory = categories[i].name;
+            renderApp();
+            window.scrollTo({ top: 200, behavior: 'smooth' });
+        }
+
+        function resetToHome() {
+            currentView = 'categories';
+            selectedCategory = null;
+            renderApp();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 글/하위 페이지 공통 로더 (페이지 안의 페이지로 계속 이동 가능)
+        async function openModal(postId, fallbackTitle) {
+            const meta = posts.find(p => p.id === postId);
+            const crumbs = document.getElementById('modalCrumbs');
+            const content = document.getElementById('modalContent');
+
+            if (meta) {
+                document.getElementById('modalCategory').innerText = meta.category || 'Uncategorized';
+                document.getElementById('modalDate').innerText = meta.date;
+            }
+            document.getElementById('modalTitle').innerText = meta ? meta.title : (fallbackTitle || '');
+            crumbs.classList.add('hidden');
+            content.innerHTML =
+                '<p class="text-zinc-500"><i class="fa-solid fa-spinner fa-spin mr-2"></i>불러오는 중...</p>';
+            document.getElementById('postModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            content.closest('.overflow-y-auto').scrollTop = 0;
+
+            try {
+                const res = await fetch('/api/post?id=' + encodeURIComponent(postId));
+                const raw = await res.text();
+                let data;
+                try { data = JSON.parse(raw); }
+                catch (_) { throw new Error(`서버가 JSON이 아닌 응답을 보냈습니다 (HTTP ${res.status}): ${raw.slice(0, 120).replace(/\s+/g, ' ')}`); }
+                if (!res.ok) throw new Error(data.error || res.statusText);
+                if (!data.post) throw new Error('응답에 post 데이터가 없습니다.');
+                const post = data.post;
+
+                document.getElementById('modalCategory').innerText =
+                    (post.isSubPage ? 'SUB PAGE · ' : '') + (post.category || 'Uncategorized');
+                document.getElementById('modalDate').innerText = post.date || '';
+                document.getElementById('modalTitle').innerText = post.title || '제목 없음';
+
+                // breadcrumb: 루트 > 중간 페이지 > (현재)
+                if (post.path && post.path.length) {
+                    crumbs.innerHTML = post.path.map(p =>
+                        `<button type="button" data-page-id="${esc(p.id)}" data-title="${esc(p.title)}" class="hover:text-emerald-500 underline-offset-2 hover:underline cursor-pointer">${esc(p.title)}</button><i class="fa-solid fa-chevron-right text-[8px] mx-1"></i>`
+                    ).join('') + `<span class="text-zinc-700 dark:text-zinc-300">${esc(post.title || '제목 없음')}</span>`;
+                    crumbs.classList.remove('hidden');
+                    crumbs.classList.add('flex');
+                }
+
+                // content 는 서버에서 이스케이프 후 생성된 HTML
+                const types = Object.entries(post.blockTypes || {}).map(([k, v]) => `${esc(k)}×${v}`).join(', ') || '없음';
+                const diag = `<p class="text-xs text-zinc-400 code-font mt-4 break-all">진단: API ${esc(post.version || '구버전')} · 블록 ${types}${(post.unsupported || []).length ? ' · 미지원 ' + esc(post.unsupported.join(', ')) : ''}</p>`;
+
+                if (post.empty) {
+                    content.innerHTML = `<p class="text-zinc-500">이 페이지에 표시할 내용이 없습니다.</p>` + diag;
+                } else {
+                    content.innerHTML = post.content;
+                    // 어떤 경우에도 빈 화면이 되지 않도록 최종 확인
+                    const hasVisible = content.textContent.trim() || content.querySelector('img, button, table, hr');
+                    if (!hasVisible) {
+                        content.innerHTML = `<p class="text-zinc-500">표시할 수 있는 내용이 없습니다.</p>` + diag;
+                    } else if (new URLSearchParams(location.search).has('debug')) {
+                        content.insertAdjacentHTML('beforeend', diag);
+                    }
+                }
+            } catch (e) {
+                content.innerHTML =
+                    `<p class="text-rose-500">본문을 불러오지 못했습니다: ${esc(e.message)}</p>`;
+            }
+        }
+
+        // 본문 안의 하위 페이지 버튼 / breadcrumb 클릭 → 해당 페이지 열기
+        ['modalContent', 'modalCrumbs'].forEach(id => {
+            document.getElementById(id).addEventListener('click', e => {
+                const btn = e.target.closest('[data-page-id]');
+                if (!btn) return;
+                openModal(btn.dataset.pageId, btn.dataset.title || btn.innerText.trim());
+            });
+        });
+
+        function openAboutModal() {
+            document.getElementById('modalCategory').innerText = 'ABOUT ME';
+            document.getElementById('modalDate').innerText = 'Profile & Info';
+            document.getElementById('modalTitle').innerText = '모의해커 & 보안 엔지니어 포트폴리오';
+            document.getElementById('modalContent').innerHTML = `
+                <p class="font-semibold text-emerald-500">안녕하세요! 노션 연동형 보안 포트폴리오입니다.</p>
+                <p>노션 데이터베이스에 글을 작성하면 이 사이트에 자동으로 반영됩니다.</p>`;
+            document.getElementById('postModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('postModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark'); html.classList.add('light');
+                icon.className = 'fa-solid fa-sun text-sm text-amber-500';
+            } else {
+                html.classList.remove('light'); html.classList.add('dark');
+                icon.className = 'fa-solid fa-moon text-sm text-emerald-400';
+            }
+        }
+
+        window.onload = () => loadPosts();
+    </script>
+</body>
+</html>
